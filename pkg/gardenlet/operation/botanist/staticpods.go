@@ -93,7 +93,7 @@ func (b *Botanist) deployBootstrapETCD(role string, bootstrapEtcdBackupPath stri
 
 func (b *Botanist) deployKubeAPIServer(ctx context.Context, useShootAccessTokens bool) error {
 	if !useShootAccessTokens {
-		b.Shoot.Components.ControlPlane.KubeAPIServer.EnableStaticTokenKubeconfig()
+		b.Shoot.Components.ControlPlane.KubeAPIServer.EnableStaticTokenKubeconfig(b.Shoot.GetInfo().Status.TechnicalID)
 	}
 
 	b.Shoot.Components.ControlPlane.KubeAPIServer.SetAutoscalingReplicas(new(int32(0)))
@@ -338,7 +338,7 @@ func (b *Botanist) appendStaticAdminKubeconfigToFiles(files []extensionsv1alpha1
 
 	return append(files, extensionsv1alpha1.File{
 		Path:        PathKubeconfig,
-		Permissions: new(uint32(0600)),
+		Permissions: new(int32(0600)),
 		Content:     extensionsv1alpha1.FileContent{Inline: &extensionsv1alpha1.FileContentInline{Encoding: "b64", Data: utils.EncodeBase64(userKubeconfigSecret.Data[secretsutils.DataKeyKubeconfig])}},
 	}), nil
 }
@@ -363,7 +363,7 @@ func (b *Botanist) appendDynamicAdminKubeconfigToFiles(files []extensionsv1alpha
 
 	return append(files, extensionsv1alpha1.File{
 		Path:        PathKubeconfig,
-		Permissions: new(uint32(0600)),
+		Permissions: new(int32(0600)),
 		Content:     extensionsv1alpha1.FileContent{Inline: &extensionsv1alpha1.FileContentInline{Encoding: "b64", Data: utils.EncodeBase64(rawKubeconfig)}},
 	}), nil
 }
@@ -373,12 +373,12 @@ func (b *Botanist) appendEtcdCAsToFiles(files []extensionsv1alpha1.File) []exten
 		return []extensionsv1alpha1.File{
 			{
 				Path:        filepath.Join(path, secretsutils.DataKeyCertificateCA),
-				Permissions: new(uint32(0600)),
+				Permissions: new(int32(0600)),
 				Content:     extensionsv1alpha1.FileContent{Inline: &extensionsv1alpha1.FileContentInline{Encoding: "b64", Data: utils.EncodeBase64(data[secretsutils.DataKeyCertificateCA])}},
 			},
 			{
 				Path:        filepath.Join(path, secretsutils.DataKeyPrivateKeyCA),
-				Permissions: new(uint32(0600)),
+				Permissions: new(int32(0600)),
 				Content:     extensionsv1alpha1.FileContent{Inline: &extensionsv1alpha1.FileContentInline{Encoding: "b64", Data: utils.EncodeBase64(data[secretsutils.DataKeyPrivateKeyCA])}},
 			},
 		}

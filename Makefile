@@ -18,7 +18,7 @@ PUSH_LATEST_TAG                            := false
 
 # Use a specific Go toolchain version to ensure consistent builds across different environments.
 # renovate: datasource=golang-version depName=go
-export GOTOOLCHAIN := go1.26.9
+export GOTOOLCHAIN := go1.26.10
 # $(GOTOOLCHAIN) is exported, but exported make variables are not propagated into the environment of $(shell ...) sub-shells.
 # By exporting it explicitly in the SHELL command, it becomes available also in sub-shells.
 SHELL=/usr/bin/env GOTOOLCHAIN=$(GOTOOLCHAIN) bash -o pipefail
@@ -403,6 +403,8 @@ test-e2e-local-gardenadm-managed-infra-bootstrap: $(GINKGO)
 	./hack/test-e2e-local.sh gardenadm --procs=1 --label-filter="managed-infra && bootstrap" ./test/e2e/gardenadm/...
 test-e2e-local-gardenadm-managed-infra-connect: $(GINKGO)
 	./hack/test-e2e-local.sh gardenadm --procs=1 --label-filter="managed-infra && connect" ./test/e2e/gardenadm/...
+test-e2e-local-gardenadm-managed-infra-seed: $(GINKGO)
+	./hack/test-e2e-local.sh gardenadm --procs=1 --label-filter="managed-infra && (seed || hosted-shoot)" ./test/e2e/gardenadm/...
 test-e2e-local-gardenadm-unmanaged-infra-initjoin: $(GINKGO)
 	./hack/test-e2e-local.sh gardenadm --procs=1 --label-filter="unmanaged-infra && initjoin" ./test/e2e/gardenadm/...
 test-e2e-local-gardenadm-unmanaged-infra-connect: $(GINKGO)

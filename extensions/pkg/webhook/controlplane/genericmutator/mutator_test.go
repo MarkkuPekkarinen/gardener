@@ -356,6 +356,39 @@ var _ = Describe("Mutator", func() {
 			),
 		)
 
+		Describe("externally managed etcds", func() {
+			var externallyManaged = func(storageClass *string) *druidcorev1alpha1.Etcd {
+				return &druidcorev1alpha1.Etcd{
+					ObjectMeta: metav1.ObjectMeta{Name: "etcd-main", Namespace: namespace},
+					Spec: druidcorev1alpha1.EtcdSpec{
+						ExternallyManagedMemberAddresses: []string{"10.0.0.1"},
+						StorageClass:                     storageClass,
+					},
+				}
+			}
+
+			It("should not call the ensurer on creation", func() {
+				newEtcd := externallyManaged(nil)
+
+				Expect(mutator.Mutate(context.Background(), newEtcd, nil)).To(Succeed())
+				Expect(newEtcd.Spec.StorageClass).To(BeNil())
+			})
+
+			It("should not add a storage class if the existing object has none", func() {
+				newEtcd := externallyManaged(new("some-class"))
+
+				Expect(mutator.Mutate(context.Background(), newEtcd, externallyManaged(nil))).To(Succeed())
+				Expect(newEtcd.Spec.StorageClass).To(BeNil())
+			})
+
+			It("should keep the storage class of the existing object", func() {
+				newEtcd := externallyManaged(nil)
+
+				Expect(mutator.Mutate(context.Background(), newEtcd, externallyManaged(new("existing-class")))).To(Succeed())
+				Expect(newEtcd.Spec.StorageClass).To(Equal(new("existing-class")))
+			})
+		})
+
 		Context("OperatingSystemConfig mutation", func() {
 			var newOSC *extensionsv1alpha1.OperatingSystemConfig
 
@@ -637,7 +670,7 @@ func checkOperatingSystemConfig(osc *extensionsv1alpha1.OperatingSystemConfig) {
 	cloudProvider := extensionswebhook.FileWithPath(osc.Spec.Files, "/var/lib/kubelet/cloudprovider.conf")
 	ExpectWithOffset(1, cloudProvider).To(Not(BeNil()))
 	ExpectWithOffset(1, cloudProvider.Path).To(Equal("/var/lib/kubelet/cloudprovider.conf"))
-	ExpectWithOffset(1, cloudProvider.Permissions).To(PointTo(Equal(uint32(0644))))
+	ExpectWithOffset(1, cloudProvider.Permissions).To(PointTo(Equal(int32(0644))))
 	ExpectWithOffset(1, cloudProvider.Content.Inline).To(Equal(&extensionsv1alpha1.FileContentInline{Data: cloudproviderconfEncoded, Encoding: encoding}))
 }
 

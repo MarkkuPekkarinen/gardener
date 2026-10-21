@@ -206,6 +206,17 @@ func (m *mutator) Mutate(ctx context.Context, newObj, oldObj client.Object) erro
 				}
 			}
 
+			// The members of externally managed etcds (e.g., static pods in self-hosted shoots) store their data on the
+			// host, so the storage settings of the provider don't apply. Such an Etcd might be created before this
+			// webhook is registered, and etcd-druid forbids adding or removing the storage class later. Hence, keep the
+			// storage class of the existing object as it is.
+			if !druidcorev1alpha1.ArePodsManagedByEtcdDruid(x) {
+				if oldEtcd != nil {
+					x.Spec.StorageClass = oldEtcd.Spec.StorageClass
+				}
+				return nil
+			}
+
 			extensionswebhook.LogMutation(m.logger, x.Kind, x.Namespace, x.Name)
 			return m.ensurer.EnsureETCD(ctx, gctx, x, oldEtcd)
 		}
@@ -486,7 +497,7 @@ func (m *mutator) ensureKubeletCloudProviderConfig(ctx context.Context, gctx ext
 	// Ensure the cloud provider config file is part of the OperatingSystemConfig
 	osc.Spec.Files = extensionswebhook.EnsureFileWithPath(osc.Spec.Files, extensionsv1alpha1.File{
 		Path:        CloudProviderConfigPath,
-		Permissions: new(uint32(0644)),
+		Permissions: new(int32(0644)),
 		Content: extensionsv1alpha1.FileContent{
 			Inline: fci,
 		},
